@@ -1,0 +1,30 @@
+[package]
+name = "performance"
+version = "0.1.0"
+edition = "2021"
+description = "A Rust library for performance optimization, parallel processing and caching."
+homepage = "https://www.mazze.io"
+authors = ["Mazze Team"]
+repository = "https://github.com/MazzeLabs/mazze-rust/performance"
+license = "MIT"
+
+[dependencies]
+rayon = "1.5" # For parallel processing
+cached = "0.33" # For caching
+log = "0.4" # For logging
+serde = { version = "1.0", features = ["derive"] } # For serialization and deserialization
+serde_json = "1.0" # For JSON handling
+
+[dev-dependencies]
+criterion = "0.3" # For benchmarking
+assert_approx_eq = "2.1" # For approximate equality in tests
+
+[features]
+default = ["parallel", "caching"]
+parallel = ["rayon"]
+caching = ["cached"]
+
+[lib]
+name = "performance"
+path = "src/lib.rs"
+

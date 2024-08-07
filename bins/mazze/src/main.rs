@@ -1,6 +1,4 @@
-// Copyright 2024 Mazze Labs. All rights reserved.
-// Mazze is free software and distributed under GNU General Public License.
-// See http://www.gnu.org/licenses/
+
 
 // Module and crate imports
 #[cfg(test)]
@@ -94,7 +92,7 @@ fn main() -> Result<(), String> {
                             FileAppender::builder().encoder(
                                 Box::new(
                                     PatternEncoder::new(
-                                        "{d} {h({l}):5.5} {T:<20.20} {t:12.12} - {m}{n}")))
+                                       "{d} {h({l}):5.5} {T:<20.20} mazzecore - {m}{n}")))
                                 .build(log_file)
                                 .map_err(
                                     |e| format!("failed to build log pattern: {:?}", e))?,
@@ -150,9 +148,8 @@ MM  MM  A     A      Z       Z  E
 M MM M  AAAAAAA     Z       Z   EEEE 
 M    M  A     A    Z       Z    E    
 M    M  A     A  ZZZZZ   ZZZZZ  EEEEE
-Current Version: {}
-",
-        version
+Current Version: 1.0.0
+"
     );
 
     // Create and start the appropriate client based on node type

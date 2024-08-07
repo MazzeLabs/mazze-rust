@@ -1,6 +1,4 @@
-// Copyright 2024 Mazze Labs. All rights reserved.
-// Mazze is free software and distributed under GNU General Public License.
-// See http://www.gnu.org/licenses/
+
 
 use mazze_types::{hexstr_to_h256, H256}; // Importing types and conversion functions from mazze_types.
 use primitives::Block; // Importing Block type from primitives.

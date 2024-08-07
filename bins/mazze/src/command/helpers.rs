@@ -14,9 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity Ethereum.  If not, see <http://www.gnu.org/licenses/>.
 
-// Copyright 2024 Mazze Labs. All rights reserved.
-// Mazze is free software and distributed under GNU General Public License.
-// See http://www.gnu.org/licenses/
+
 
 // Importing necessary crates and modules
 use mazzekey::Password;

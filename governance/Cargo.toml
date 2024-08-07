@@ -1,0 +1,32 @@
+[package]
+name = "governance"
+version = "0.1.0"
+edition = "2021"
+description = "Governance module for the Mazze project, including proposal management and voting systems."
+homepage = "https://www.mazze.io"
+authors = ["Mazze Team"]
+repository = "https://github.com/MazzeLabs/mazze-rust/governance"
+license = "MIT"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["full"] }
+warp = "0.3"
+thiserror = "1.0"
+uuid = { version = "0.8", features = ["serde", "v4"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+warp = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "0.8", features = ["serde", "v4"] }
+anyhow = "1.0"
+
+[features]
+default = ["full"]
+full = ["serde", "serde_json", "tokio", "warp", "thiserror", "uuid"]
+
+[package.metadata.docs.rs]
+features = ["full"]
