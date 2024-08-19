@@ -1,4 +1,6 @@
-
+// Copyright 2024 Mazze Foundation. All rights reserved.
+// Mazze is free software and distributed under GNU General Public License.
+// See http://www.gnu.org/licenses/
 
 use std::{
     cmp::max,
@@ -12,18 +14,18 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use mazze_parameters::consensus_internal::ELASTICITY_MULTIPLIER;
 use futures::executor::block_on;
+use mazze_parameters::consensus_internal::ELASTICITY_MULTIPLIER;
 use parking_lot::RwLock;
 use slab::Slab;
 use tokio02::sync::mpsc::error::TryRecvError;
 use unexpected::{Mismatch, OutOfBounds};
 
-use mazze_executor::machine::Machine;
-use mazze_types::{H256, U256};
-use dag::{Graph, RichDAG, RichDETS, DETS, DAG};
+use dag::{Graph, RichDAG, RichDETS, DAG, DETS};
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use malloc_size_of_derive::MallocSizeOf as DeriveMallocSizeOf;
+use mazze_executor::machine::Machine;
+use mazze_types::{H256, U256};
 use metrics::{
     register_meter_with_group, register_queue, Meter, MeterTimer, Queue,
 };
@@ -1110,14 +1112,15 @@ impl SynchronizationGraph {
                                 debug!("Worker thread receive: block = {}", hash);
                                 let header = data_man.block_header_by_hash(&hash).expect("Header must exist before sending to the consensus worker!");
 
+                                // TODO: enable PoS reference - disabled for block processing debugging
                                 // start pos with an era advance.
-                                if !pos_started && pos_verifier.is_enabled_at_height(header.height() + consensus.get_config().inner_conf.era_epoch_count) {
-                                    if let Err(e) = pos_verifier.initialize(consensus.clone().to_arc_consensus()) {
-                                        info!("PoS cannot be started at the expected height: e={}", e);
-                                    } else {
-                                        pos_started = true;
-                                    }
-                                }
+                                // if !pos_started && pos_verifier.is_enabled_at_height(header.height() + consensus.get_config().inner_conf.era_epoch_count) {
+                                //     if let Err(e) = pos_verifier.initialize(consensus.clone().to_arc_consensus()) {
+                                //         info!("PoS cannot be started at the expected height: e={}", e);
+                                //     } else {
+                                //         pos_started = true;
+                                //     }
+                                // }
 
                                 let mut cnt: usize = 0;
                                 let parent_hash = header.parent_hash();

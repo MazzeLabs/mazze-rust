@@ -199,10 +199,10 @@ build_config! {
         // but disconnect from the public network.
         (network_id, (Option<u64>), None)
         (rpc_enable_metrics, (bool), false)
-        (tcp_port, (u16), 32323)
+        (tcp_port, (u16), 55555)
         (public_tcp_port, (Option<u16>), None)
         (public_address, (Option<String>), None)
-        (udp_port, (Option<u16>), Some(32323))
+        (udp_port, (Option<u16>), Some(55555))
 
         // Network parameters section.
         (blocks_request_timeout_ms, (u64), 20_000)

@@ -1,4 +1,6 @@
-
+// Copyright 2024 Mazze Foundation. All rights reserved.
+// Mazze is free software and distributed under GNU General Public License.
+// See http://www.gnu.org/licenses/
 
 use super::blame_verifier::BlameVerifier;
 use crate::{
@@ -17,10 +19,10 @@ use crate::{
     statistics::SharedStatistics,
     NodeType, Notifications, SharedTransactionPool,
 };
+use hibitset::{BitSet, BitSetLike, DrainableBitSet};
 use mazze_parameters::{consensus::*, consensus_internal::*};
 use mazze_storage::{storage_db::SnapshotDbManagerTrait, StateIndex};
 use mazze_types::H256;
-use hibitset::{BitSet, BitSetLike, DrainableBitSet};
 use parking_lot::Mutex;
 use primitives::{MERKLE_NULL_NODE, NULL_EPOCH};
 use std::{
@@ -310,10 +312,8 @@ impl ConsensusNewBlockHandler {
         }
         let mut last_in_main = inner.arena[parent].data.last_main_in_past;
         for referee in &inner.arena[me].referees {
-            last_in_main = max(
-                last_in_main,
-                inner.arena[*referee].data.last_main_in_past,
-            );
+            last_in_main =
+                max(last_in_main, inner.arena[*referee].data.last_main_in_past);
         }
         let mut visited = BitSet::new();
         let mut queue = VecDeque::new();
@@ -373,8 +373,7 @@ impl ConsensusNewBlockHandler {
     pub fn compute_outlier_hashset_bruteforce(
         inner: &ConsensusGraphInner, me: usize,
     ) -> HashSet<usize> {
-        let s =
-            ConsensusNewBlockHandler::compute_outlier_bruteforce(inner, me);
+        let s = ConsensusNewBlockHandler::compute_outlier_bruteforce(inner, me);
         let mut ret = HashSet::new();
         for index in s.iter() {
             ret.insert(index as usize);
@@ -395,9 +394,8 @@ impl ConsensusNewBlockHandler {
         let parent_outlier_opt = inner.outlier_cache.get(parent);
         let mut outlier;
         if parent_outlier_opt.is_none() {
-            outlier = ConsensusNewBlockHandler::compute_outlier_bruteforce(
-                inner, me,
-            );
+            outlier =
+                ConsensusNewBlockHandler::compute_outlier_bruteforce(inner, me);
         } else {
             // outlier = parent_outlier + parent_future - my_past
             // Compute future set of parent
@@ -678,33 +676,34 @@ impl ConsensusNewBlockHandler {
             }
         }
 
+        // TODO: enable PoS reference - disabled for block processing debugging
         // Check if `new` is in the subtree of its pos reference.
-        if self
-            .pos_verifier
-            .is_enabled_at_height(inner.arena[new].height)
-        {
-            let main_decision = inner
-                .get_pos_reference_main_decision(&inner.arena[new].hash)
-                .expect("pos reference checked");
-            match inner.hash_to_arena_indices.get(&main_decision) {
-                // Main decision is before checkpoint or fake.
-                // Check if it's on the main chain.
-                None => {
-                    warn!("Possibly partial invalid due to pos_reference's main decision not in consensus graph");
-                    return inner.main_block_processed(&main_decision);
-                }
-                Some(main_decision_arena_index) => {
-                    if inner.lca(new, *main_decision_arena_index)
-                        != *main_decision_arena_index
-                    {
-                        warn!("Partial invalid due to not in the subtree of pos_reference's main decision");
-                        // Not in the subtree of main_decision, mark as partial
-                        // invalid.
-                        return false;
-                    }
-                }
-            }
-        }
+        // if self
+        //     .pos_verifier
+        //     .is_enabled_at_height(inner.arena[new].height)
+        // {
+        //     let main_decision = inner
+        //         .get_pos_reference_main_decision(&inner.arena[new].hash)
+        //         .expect("pos reference checked");
+        //     match inner.hash_to_arena_indices.get(&main_decision) {
+        //         // Main decision is before checkpoint or fake.
+        //         // Check if it's on the main chain.
+        //         None => {
+        //             warn!("Possibly partial invalid due to pos_reference's main decision not in consensus graph");
+        //             return inner.main_block_processed(&main_decision);
+        //         }
+        //         Some(main_decision_arena_index) => {
+        //             if inner.lca(new, *main_decision_arena_index)
+        //                 != *main_decision_arena_index
+        //             {
+        //                 warn!("Partial invalid due to not in the subtree of pos_reference's main decision");
+        //                 // Not in the subtree of main_decision, mark as partial
+        //                 // invalid.
+        //                 return false;
+        //             }
+        //         }
+        //     }
+        // }
 
         return true;
     }
@@ -1039,8 +1038,7 @@ impl ConsensusNewBlockHandler {
                 inner.arena[me].data.force_confirm, me
             );
 
-            let weight_tuple = if outlier_barrier.len() >= OUTLIER_BARRIER_CAP
-            {
+            let weight_tuple = if outlier_barrier.len() >= OUTLIER_BARRIER_CAP {
                 Some(inner.compute_subtree_weights(me, &outlier_barrier))
             } else {
                 None
@@ -1264,8 +1262,7 @@ impl ConsensusNewBlockHandler {
                 // The new subtree is heavier, update main chain
                 let fork_main_index = inner.height_to_main_index(fork_at);
                 assert!(fork_main_index < inner.main_chain.len());
-                for discarded_idx in
-                    inner.main_chain.split_off(fork_main_index)
+                for discarded_idx in inner.main_chain.split_off(fork_main_index)
                 {
                     // Reset the epoch_number of the discarded fork
                     inner.reset_epoch_number_in_epoch(discarded_idx);
@@ -1278,8 +1275,7 @@ impl ConsensusNewBlockHandler {
                     inner.main_chain.push(u);
                     inner.set_epoch_number_in_epoch(
                         u,
-                        inner.main_index_to_height(inner.main_chain.len())
-                            - 1,
+                        inner.main_index_to_height(inner.main_chain.len()) - 1,
                     );
                     if inner.arena[u].height >= force_height {
                         let mut heaviest = NULL;
@@ -1994,12 +1990,12 @@ impl ConsensusNewBlockHandler {
             let main_hash = inner.arena[main_arena_index].hash;
             let height = inner.arena[main_arena_index].height;
 
-            let compute_epoch =
-                if main_index >= start_compute_epoch_main_index {
-                    true
-                } else {
-                    false
-                };
+            let compute_epoch = if main_index >= start_compute_epoch_main_index
+            {
+                true
+            } else {
+                false
+            };
 
             if self
                 .data_man
@@ -2115,11 +2111,9 @@ impl ConsensusNewBlockHandler {
                     // force to recompute last 5 epochs in case state database
                     // is not ready in last shutdown
                     if epoch_count > DEFERRED_STATE_EPOCH_COUNT {
-                        let reward_execution_info =
-                            self.executor.get_reward_execution_info(
-                                inner,
-                                main_arena_index,
-                            );
+                        let reward_execution_info = self
+                            .executor
+                            .get_reward_execution_info(inner, main_arena_index);
 
                         let main_block_height = self
                             .data_man
@@ -2426,25 +2420,24 @@ impl ConsensusNewBlockHandler {
             let main_hash = inner.arena[main_arena_index].hash;
             let height = inner.arena[main_arena_index].height + 1;
 
-            let intermediate_trie_root_merkle = match *self
-                .data_man
-                .get_epoch_execution_commitment(&main_hash)
-            {
-                Some(commitment) => {
-                    if height % snapshot_epoch_count == 1 {
-                        commitment
-                            .state_root_with_aux_info
-                            .state_root
-                            .delta_root
-                    } else {
-                        commitment
-                            .state_root_with_aux_info
-                            .state_root
-                            .intermediate_delta_root
+            let intermediate_trie_root_merkle =
+                match *self.data_man.get_epoch_execution_commitment(&main_hash)
+                {
+                    Some(commitment) => {
+                        if height % snapshot_epoch_count == 1 {
+                            commitment
+                                .state_root_with_aux_info
+                                .state_root
+                                .delta_root
+                        } else {
+                            commitment
+                                .state_root_with_aux_info
+                                .state_root
+                                .intermediate_delta_root
+                        }
                     }
-                }
-                None => MERKLE_NULL_NODE,
-            };
+                    None => MERKLE_NULL_NODE,
+                };
 
             debug!("previous main hash {:?} intermediate trie root merkle for next main {:?}", main_hash, intermediate_trie_root_merkle);
             *storage_manager.intermediate_trie_root_merkle.write() =
@@ -2505,9 +2498,8 @@ impl ConsensusNewBlockHandler {
             return;
         }
         if inner.main_chain.len() > RECYCLE_TRANSACTION_DELAY as usize {
-            let recycle_end_main_index = inner.main_chain.len()
-                - RECYCLE_TRANSACTION_DELAY as usize
-                - 1;
+            let recycle_end_main_index =
+                inner.main_chain.len() - RECYCLE_TRANSACTION_DELAY as usize - 1;
             // If the main reorg is deeper than `RECYCLE_TRANSACTION_DELAY`, we
             // will try to recycle all skipped blocks since the
             // forking point.
@@ -2517,8 +2509,7 @@ impl ConsensusNewBlockHandler {
                 recycle_end_main_index,
             );
             for recycle_main_index in start..=recycle_end_main_index {
-                let recycle_arena_index =
-                    inner.main_chain[recycle_main_index];
+                let recycle_arena_index = inner.main_chain[recycle_main_index];
                 let skipped_blocks = inner
                     .get_or_compute_skipped_epoch_blocks(recycle_arena_index)
                     .clone();
