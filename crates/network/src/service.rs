@@ -53,7 +53,7 @@ use super::DisconnectReason;
 
 const MAX_SESSIONS: usize = 2048;
 
-const DEFAULT_PORT: u16 = 32323;
+const DEFAULT_PORT: u16 = 55555;
 
 const FIRST_SESSION: StreamToken = 0;
 const LAST_SESSION: StreamToken = FIRST_SESSION + MAX_SESSIONS - 1;

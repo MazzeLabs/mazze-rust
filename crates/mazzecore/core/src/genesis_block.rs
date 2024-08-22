@@ -164,7 +164,7 @@ pub fn genesis_block(
             .unwrap();
     create_create2factory_transaction.action = Action::Create;
     create_create2factory_transaction.chain_id = genesis_chain_id;
-    create_create2factory_transaction.gas = 300000.into();
+    create_create2factory_transaction.gas = 3000000.into();
     create_create2factory_transaction.gas_price = 1.into();
     create_create2factory_transaction.storage_limit = 512;
 
@@ -182,7 +182,7 @@ pub fn genesis_block(
     create_genesis_token_manager_two_year_unlock_transaction.chain_id =
         genesis_chain_id;
     create_genesis_token_manager_two_year_unlock_transaction.gas =
-        2800000.into();
+    4000000.into();
     create_genesis_token_manager_two_year_unlock_transaction.gas_price =
         1.into();
     create_genesis_token_manager_two_year_unlock_transaction.storage_limit =
@@ -202,7 +202,7 @@ pub fn genesis_block(
     create_genesis_token_manager_four_year_unlock_transaction.chain_id =
         genesis_chain_id;
     create_genesis_token_manager_four_year_unlock_transaction.gas =
-        5000000.into();
+    8000000.into();
     create_genesis_token_manager_four_year_unlock_transaction.gas_price =
         1.into();
     create_genesis_token_manager_four_year_unlock_transaction.storage_limit =
@@ -215,7 +215,7 @@ pub fn genesis_block(
         GENESIS_TRANSACTION_CREATE_FUND_POOL.from_hex().unwrap();
     create_genesis_investor_fund_transaction.action = Action::Create;
     create_genesis_investor_fund_transaction.chain_id = genesis_chain_id;
-    create_genesis_investor_fund_transaction.gas = 400000.into();
+    create_genesis_investor_fund_transaction.gas = 4000000.into();
     create_genesis_investor_fund_transaction.gas_price = 1.into();
     create_genesis_investor_fund_transaction.storage_limit = 1000;
 
@@ -225,7 +225,7 @@ pub fn genesis_block(
         GENESIS_TRANSACTION_CREATE_FUND_POOL.from_hex().unwrap();
     create_genesis_team_fund_transaction.action = Action::Create;
     create_genesis_team_fund_transaction.chain_id = genesis_chain_id;
-    create_genesis_team_fund_transaction.gas = 400000.into();
+    create_genesis_team_fund_transaction.gas = 4000000.into();
     create_genesis_team_fund_transaction.gas_price = 1.into();
     create_genesis_team_fund_transaction.storage_limit = 1000;
 
@@ -235,7 +235,7 @@ pub fn genesis_block(
         GENESIS_TRANSACTION_CREATE_FUND_POOL.from_hex().unwrap();
     create_genesis_eco_fund_transaction.action = Action::Create;
     create_genesis_eco_fund_transaction.chain_id = genesis_chain_id;
-    create_genesis_eco_fund_transaction.gas = 400000.into();
+    create_genesis_eco_fund_transaction.gas = 4000000.into();
     create_genesis_eco_fund_transaction.gas_price = 1.into();
     create_genesis_eco_fund_transaction.storage_limit = 1000;
 
@@ -246,7 +246,7 @@ pub fn genesis_block(
         GENESIS_TRANSACTION_CREATE_FUND_POOL.from_hex().unwrap();
     create_genesis_community_fund_transaction.action = Action::Create;
     create_genesis_community_fund_transaction.chain_id = genesis_chain_id;
-    create_genesis_community_fund_transaction.gas = 400000.into();
+    create_genesis_community_fund_transaction.gas = 4000000.into();
     create_genesis_community_fund_transaction.gas_price = 1.into();
     create_genesis_community_fund_transaction.storage_limit = 1000;
 
