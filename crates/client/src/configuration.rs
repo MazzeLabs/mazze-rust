@@ -681,19 +681,26 @@ impl Configuration {
                     .expect("Stratum secret should be 64-digit hex string")
             });
 
-        ProofOfWorkConfig::new(
-            self.is_test_or_dev_mode(),
-            self.raw_conf.mining_type.as_ref().map_or_else(
+            let mining_type = self.raw_conf.mining_type.as_ref().map_or_else(
                 || {
-                    // Enable stratum implicitly if `mining_author` is set.
+                    // Start stratum if stratum_secret is present
+                    // Start cpu if only mining_author is set
+                    // Disable mining if neither is set
                     if self.raw_conf.mining_author.is_some() {
+                        if stratum_secret.is_some() {
                         "stratum"
                     } else {
-                        "disable"
+                        "cpu"
                     }
-                },
-                |s| s.as_str(),
-            ),
+                } else {
+                    "disable"
+                }
+            },
+            |s| s.as_str(),
+        );
+        ProofOfWorkConfig::new(
+            self.is_test_or_dev_mode(),
+            mining_type,
             self.raw_conf.initial_difficulty,
             self.raw_conf.stratum_listen_address.clone(),
             self.raw_conf.stratum_port,
@@ -894,11 +901,13 @@ impl Configuration {
             sync_expire_block_timeout: Duration::from_secs(
                 self.raw_conf.sync_expire_block_timeout_s,
             ),
-            allow_phase_change_without_peer: if self.is_dev_mode() {
-                true
-            } else {
-                self.raw_conf.dev_allow_phase_change_without_peer
-            },
+             //TODO: uncomment this after testing
+            // allow_phase_change_without_peer: if self.is_dev_mode() {
+            //     true
+            // } else {
+            //     self.raw_conf.dev_allow_phase_change_without_peer
+            // },
+            allow_phase_change_without_peer: true,
             min_phase_change_normal_peer_count: self
                 .raw_conf
                 .min_phase_change_normal_peer_count,
@@ -1190,7 +1199,9 @@ impl Configuration {
         }
     }
 
-    pub fn is_consortium(&self) -> bool { self.raw_conf.is_consortium }
+    pub fn is_consortium(&self) -> bool {
+        self.raw_conf.is_consortium
+    }
 
     pub fn light_node_config(&self) -> LightNodeConfiguration {
         LightNodeConfiguration {
@@ -1333,14 +1344,14 @@ impl Configuration {
             self.raw_conf.hydra_transition_height.unwrap_or(default_transition_time);
             params.transition_heights => { cip76, cip86 }
         );
-        params.transition_numbers.cip43b =
-            self.raw_conf.cip43_init_end_number.unwrap_or(
-                if self.is_test_or_dev_mode() {
-                    u64::MAX
-                } else {
-                    params.transition_numbers.cip43a
-                },
-            );
+        params.transition_numbers.cip43b = self
+            .raw_conf
+            .cip43_init_end_number
+            .unwrap_or(if self.is_test_or_dev_mode() {
+                u64::MAX
+            } else {
+                params.transition_numbers.cip43a
+            });
         params.transition_numbers.cip62 = if self.is_test_or_dev_mode() {
             0u64
         } else {

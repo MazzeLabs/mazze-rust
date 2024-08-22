@@ -19,8 +19,8 @@ use static_assertions::_core::str::FromStr;
 use std::{
     collections::{HashMap, VecDeque},
     convert::TryFrom,
-    sync::Arc,
-    sync::Mutex,
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
 };
 
 #[cfg(target_endian = "big")]
@@ -305,6 +305,29 @@ impl PowComputer {
             H256::zero()
         }
     }
+    pub fn mine(
+        &self, problem: &ProofOfWorkProblem, timeout: Duration,
+    ) -> Option<ProofOfWorkSolution> {
+        let start_time = Instant::now();
+        let mut nonce = U256::zero();
+
+        while start_time.elapsed() < timeout {
+            let hash = self.compute(&nonce, &problem.block_hash);
+
+            if ProofOfWorkProblem::validate_hash_against_boundary(
+                &hash,
+                &nonce,
+                &problem.boundary,
+            ) {
+                return Some(ProofOfWorkSolution { nonce });
+            }
+
+            nonce = nonce.overflowing_add(U256::one()).0;
+        }
+
+        None
+    }
+
 }
 
 pub fn validate(
@@ -415,7 +438,9 @@ impl TargetDifficultyCacheInner {
         }
     }
 
-    pub fn is_full(&self) -> bool { self.meta.len() >= self.capacity }
+    pub fn is_full(&self) -> bool {
+        self.meta.len() >= self.capacity
+    }
 
     pub fn evict_one(&mut self) {
         let hash = self.meta.pop_front();
@@ -477,8 +502,10 @@ impl TargetDifficultyManager {
         }
     }
 
-    pub fn get(&self, hash: &H256) -> Option<U256> { self.cache.get(hash) }
-
+    pub fn get(&self, hash: &H256) -> Option<U256> {
+        self.cache.get(hash)
+    }
+    
     pub fn set(&self, hash: H256, difficulty: U256) {
         self.cache.set(hash, difficulty);
     }

@@ -18,7 +18,7 @@ use mazzecore::{
     SharedSynchronizationService, SharedTransactionPool, Stopable,
 };
 use lazy_static::lazy_static;
-use log::{debug, trace, warn};
+use log::{debug, info, trace, warn};
 use metrics::{Gauge, GaugeUsize};
 use parking_lot::{Mutex, RwLock};
 use primitives::{pos::PosBlockId, *};
@@ -29,7 +29,8 @@ use std::{
         mpsc::{self, TryRecvError},
         Arc,
     },
-    thread, time,
+    thread,
+    time::{self, Instant},
 };
 use time::{Duration, SystemTime, UNIX_EPOCH};
 use txgen::SharedTransactionGenerator;
@@ -148,6 +149,10 @@ impl BlockGenerator {
         pow_config: ProofOfWorkConfig, pow: Arc<PowComputer>,
         mining_author: Address, pos_verifier: Arc<PosVerifier>,
     ) -> Self {
+        info!(
+            "Initial mining difficulty set to: {:?}",
+            pow_config.initial_difficulty
+        );
         BlockGenerator {
             pow_config,
             pow,
@@ -184,14 +189,21 @@ impl BlockGenerator {
 
     /// Send new PoW problem to workers
     pub fn send_problem(bg: Arc<BlockGenerator>, problem: ProofOfWorkProblem) {
-        if bg.pow_config.use_stratum() {
-            let stratum = bg.stratum.read();
-            stratum.as_ref().unwrap().notify(problem);
-        } else {
-            for item in bg.workers.lock().iter() {
-                item.1
-                    .send(problem)
-                    .expect("Failed to send the PoW problem.")
+        match bg.pow_config.mining_type {
+            MiningType::Stratum => {
+                let stratum = bg.stratum.read();
+                stratum.as_ref().unwrap().notify(problem);
+            }
+            MiningType::CPU => {
+                for item in bg.workers.lock().iter() {
+                    item.1
+                        .send(problem)
+                        .expect("Failed to send the PoW problem.")
+                }
+            }
+            MiningType::Disable => {
+                // No action needed for disabled mining
+                debug!("Mining is disabled. Ignoring PoW problem.");
             }
         }
     }
@@ -749,7 +761,9 @@ impl BlockGenerator {
         hash
     }
 
-    pub fn pow_config(&self) -> ProofOfWorkConfig { self.pow_config.clone() }
+    pub fn pow_config(&self) -> ProofOfWorkConfig {
+        self.pow_config.clone()
+    }
 
     /// Start num_worker new workers
     pub fn start_new_worker(
@@ -793,6 +807,120 @@ impl BlockGenerator {
     }
 
     pub fn start_mining(bg: Arc<BlockGenerator>, _payload_len: u32) {
+        match bg.pow_config.mining_type {
+            MiningType::Disable => {
+                debug!("Mining is disabled.");
+                return;
+            }
+            MiningType::CPU => {
+                debug!("Starting CPU mining.");
+                BlockGenerator::start_cpu_mining(bg, _payload_len);
+            }
+            MiningType::Stratum => {
+                debug!("Starting Stratum mining server.");
+                BlockGenerator::start_stratum_mining(bg, _payload_len);
+            }
+        }
+    }
+
+    fn start_cpu_mining(bg: Arc<BlockGenerator>, _payload_len: u32) {
+        let pow_computer = Arc::new(PowComputer::new());
+        let mut current_mining_block: Option<Block> = None;
+        let mut current_problem: Option<ProofOfWorkProblem> = None;
+        let mut last_assemble = SystemTime::now();
+
+        loop {
+            match *bg.state.read() {
+                MiningState::Stop => return,
+                _ => {}
+            }
+
+            if bg.is_mining_block_outdated(
+                current_mining_block.as_ref(),
+                &last_assemble,
+            ) {
+                let new_block = bg.assemble_new_block(
+                    MAX_TRANSACTION_COUNT_PER_BLOCK,
+                    bg.graph.verification_config.max_block_size_in_bytes,
+                    vec![],
+                );
+                let problem = ProofOfWorkProblem::new(
+                    new_block.block_header.height(),
+                    new_block.block_header.problem_hash(),
+                    *new_block.block_header.difficulty(),
+                );
+                pow_computer.initialize(&problem.block_hash);
+                current_mining_block = Some(new_block);
+                current_problem = Some(problem);
+                last_assemble = SystemTime::now();
+            }
+
+            if let Some(problem) = current_problem.as_ref() {
+                match Self::get_problem_solution(
+                    &pow_computer,
+                    problem,
+                    Duration::from_secs(5),
+                ) {
+                    Some(solution) => {
+                        info!(
+                            "Found mining solution: nonce = {:?}",
+                            solution.nonce
+                        );
+                        if let Some(mut block) = current_mining_block.take() {
+                            block.block_header.set_nonce(solution.nonce);
+                            let hash = block.block_header.compute_hash();
+                            bg.on_mined_block(block);
+                            info!("Mined block with hash: {:?}", hash);
+                        }
+                        current_problem = None;
+                    }
+                    None => {
+                        info!(
+                            "No solution found in this attempt, continuing..."
+                        );
+                    }
+                }
+            }
+
+            thread::sleep(Duration::from_millis(10));
+        }
+    }
+
+    fn get_problem_solution(
+        pow_computer: &PowComputer, problem: &ProofOfWorkProblem,
+        timeout: Duration,
+    ) -> Option<ProofOfWorkSolution> {
+        info!(
+            "Starting mining attempt with difficulty: {:?}",
+            problem.difficulty
+        );
+        let start_time = Instant::now();
+        let mut nonce = U256::zero();
+        let mut hashes_checked = 0;
+
+        while start_time.elapsed() < timeout {
+            let hash = pow_computer.compute(&nonce, &problem.block_hash);
+            hashes_checked += 1;
+
+            if ProofOfWorkProblem::validate_hash_against_boundary(
+                &hash,
+                &nonce,
+                &problem.boundary,
+            ) {
+                info!(
+                    "Solution found after checking {} hashes",
+                    hashes_checked
+                );
+                return Some(ProofOfWorkSolution { nonce });
+            }
+
+            nonce = nonce.overflowing_add(U256::one()).0;
+        }
+
+        None
+    }
+
+    fn start_stratum_mining(bg: Arc<BlockGenerator>, _payload_len: u32) {
         let mut current_mining_block = None;
         let mut recent_mining_blocks = vec![];
         let mut recent_mining_problems = vec![];
@@ -801,11 +929,7 @@ impl BlockGenerator {
             time::Duration::from_millis(BLOCKGEN_LOOP_SLEEP_IN_MILISECS);
 
         let receiver: mpsc::Receiver<ProofOfWorkSolution> =
-            if bg.pow_config.use_stratum() {
-                BlockGenerator::start_new_stratum_worker(bg.clone())
-            } else {
-                BlockGenerator::start_new_worker(1, bg.clone())
-            };
+        BlockGenerator::start_new_stratum_worker(bg.clone());
 
         let mut last_notify = SystemTime::now();
         let mut last_assemble = SystemTime::now();
@@ -968,5 +1092,7 @@ impl BlockGenerator {
 }
 
 impl Stopable for BlockGenerator {
-    fn stop(&self) { Self::stop(self) }
+    fn stop(&self) {
+        Self::stop(self)
+    }
 }

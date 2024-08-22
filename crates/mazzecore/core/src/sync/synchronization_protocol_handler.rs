@@ -98,9 +98,13 @@ pub enum SyncHandlerWorkType {
 }
 
 pub trait TaskSize {
-    fn size(&self) -> usize { 0 }
+    fn size(&self) -> usize {
+        0
+    }
 
-    fn count(&self) -> usize { 1 }
+    fn count(&self) -> usize {
+        1
+    }
 }
 
 /// FIFO queue to async execute tasks.
@@ -172,9 +176,13 @@ impl<T: TaskSize> AsyncTaskQueue<T> {
         task
     }
 
-    fn size(&self) -> usize { self.inner.read().size }
+    fn size(&self) -> usize {
+        self.inner.read().size
+    }
 
-    pub fn is_full(&self) -> bool { self.size() >= self.max_capacity }
+    pub fn is_full(&self) -> bool {
+        self.size() >= self.max_capacity
+    }
 
     /// Return `true` if inflight insertion is successful.
     pub fn estimated_available_count(&self) -> usize {
@@ -221,7 +229,9 @@ impl TaskSize for RecoverPublicTask {
         self.size_of(&mut ops) + std::mem::size_of::<Self>()
     }
 
-    fn count(&self) -> usize { self.blocks.len() }
+    fn count(&self) -> usize {
+        self.blocks.len()
+    }
 }
 
 pub struct LocalMessageTask {
@@ -486,7 +496,9 @@ impl SynchronizationProtocolHandler {
         }
     }
 
-    pub fn is_consortium(&self) -> bool { self.protocol_config.is_consortium }
+    pub fn is_consortium(&self) -> bool {
+        self.protocol_config.is_consortium
+    }
 
     fn get_to_propagate_trans(&self) -> HashMap<H256, Arc<SignedTransaction>> {
         self.graph.get_to_propagate_trans()
@@ -1609,7 +1621,9 @@ impl SynchronizationProtocolHandler {
             .database_gc(self.graph.consensus.best_epoch_number())
     }
 
-    fn log_statistics(&self) { self.graph.log_statistics(); }
+    fn log_statistics(&self) {
+        self.graph.log_statistics();
+    }
 
     fn update_total_weight_delta_heartbeat(&self) {
         self.graph.update_total_weight_delta_heartbeat();
@@ -1620,11 +1634,14 @@ impl SynchronizationProtocolHandler {
             Some(_pm_lock) => {
                 self.phase_manager.try_initialize(io, self);
                 loop {
-                    // Allow multiple phase changes in one round.
+                    
                     let current_phase = self.phase_manager.get_current_phase();
+                    info!("Current phase: {:?}", current_phase.phase_type());
                     let next_phase_type = current_phase.next(io, self);
+                    info!("Next phase: {:?}", next_phase_type);
                     if current_phase.phase_type() != next_phase_type {
                         // Phase changed
+                        info!("Transitioning to phase: {:?}", next_phase_type);
                         self.phase_manager.change_phase_to(
                             next_phase_type,
                             io,

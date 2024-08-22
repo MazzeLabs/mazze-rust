@@ -237,17 +237,18 @@ pub fn initialize_common_modules(
     // TODO(lpl): Keep it properly and allow not running pos.
     let (self_pos_private_key, self_vrf_private_key) = {
         let key_path = Path::new(&conf.raw_conf.pos_private_key_path);
-        let default_passwd = if conf.is_test_or_dev_mode() {
-            Some(vec![])
-        } else {
-            conf.raw_conf
-                .dev_pos_private_key_encryption_password
-                .clone()
-                // If the password is not set in the config file, read it from
-                // the environment variable.
-                .or(std::env::var("MAZZE_POS_KEY_ENCRYPTION_PASSWORD").ok())
-                .map(|s| s.into_bytes())
-        };
+        // let default_passwd = if conf.is_test_or_dev_mode() {
+        //     Some(vec![])
+        // } else {
+        //     conf.raw_conf
+        //         .dev_pos_private_key_encryption_password
+        //         .clone()
+        //         // If the password is not set in the config file, read it from
+        //         // the environment variable.
+        //         .or(std::env::var("MAZZE_POS_KEY_ENCRYPTION_PASSWORD").ok())
+        //         .map(|s| s.into_bytes())
+        // };
+        let default_passwd = Some(vec![]);
         if key_path.exists() {
             let passwd = match default_passwd {
                 Some(p) => p,
@@ -885,11 +886,15 @@ pub mod delegate_convert {
     }
 
     impl<T> Into<JsonRpcResult<T>> for JsonRpcResult<T> {
-        fn into(x: Self) -> JsonRpcResult<T> { x }
+        fn into(x: Self) -> JsonRpcResult<T> {
+            x
+        }
     }
 
     impl<T: Send + Sync + 'static> Into<BoxFuture<T>> for BoxFuture<T> {
-        fn into(x: Self) -> BoxFuture<T> { x }
+        fn into(x: Self) -> BoxFuture<T> {
+            x
+        }
     }
 
     impl<T: Send + Sync + 'static> Into<BoxFuture<T>> for RpcBoxFuture<T> {
@@ -899,7 +904,9 @@ pub mod delegate_convert {
     }
 
     impl Into<JsonRpcError> for RpcError {
-        fn into(e: Self) -> JsonRpcError { e.into() }
+        fn into(e: Self) -> JsonRpcError {
+            e.into()
+        }
     }
 
     pub fn into_jsonrpc_result<T>(r: RpcResult<T>) -> JsonRpcResult<T> {
@@ -910,7 +917,9 @@ pub mod delegate_convert {
     }
 
     impl<T> Into<JsonRpcResult<T>> for RpcResult<T> {
-        fn into(x: Self) -> JsonRpcResult<T> { into_jsonrpc_result(x) }
+        fn into(x: Self) -> JsonRpcResult<T> {
+            into_jsonrpc_result(x)
+        }
     }
 
     /// Sometimes an rpc method is implemented asynchronously, then the rpc
