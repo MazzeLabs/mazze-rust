@@ -5,6 +5,8 @@ use crate::miner::{
     stratum::{Options as StratumOption, Stratum},
     work_notify::NotifyWork,
 };
+use lazy_static::lazy_static;
+use log::{debug, info, trace, warn};
 use mazze_parameters::{
     consensus::GENESIS_GAS_LIMIT, consensus_internal::ELASTICITY_MULTIPLIER,
 };
@@ -17,8 +19,6 @@ use mazzecore::{
     ConsensusGraph, ConsensusGraphTrait, SharedSynchronizationGraph,
     SharedSynchronizationService, SharedTransactionPool, Stopable,
 };
-use lazy_static::lazy_static;
-use log::{debug, info, trace, warn};
 use metrics::{Gauge, GaugeUsize};
 use parking_lot::{Mutex, RwLock};
 use primitives::{pos::PosBlockId, *};
@@ -187,6 +187,7 @@ impl BlockGenerator {
         }
     }
 
+    /// Send new PoW problem to workers
     /// Send new PoW problem to workers
     pub fn send_problem(bg: Arc<BlockGenerator>, problem: ProofOfWorkProblem) {
         match bg.pow_config.mining_type {
@@ -406,7 +407,7 @@ impl BlockGenerator {
 
         let best_block_hash = best_info.best_block_hash.clone();
         let mut referee = best_info.bounded_terminal_block_hashes.clone();
-         // TODO: enable PoS reference - disabled for block processing debugging
+        // TODO: enable PoS reference - disabled for block processing debugging
         // let maybe_pos_reference = if self
         //     .pos_verifier
         //     .is_enabled_at_height(best_info.best_epoch_number + 1)
@@ -933,7 +934,7 @@ impl BlockGenerator {
             time::Duration::from_millis(BLOCKGEN_LOOP_SLEEP_IN_MILISECS);
 
         let receiver: mpsc::Receiver<ProofOfWorkSolution> =
-        BlockGenerator::start_new_stratum_worker(bg.clone());
+            BlockGenerator::start_new_stratum_worker(bg.clone());
 
         let mut last_notify = SystemTime::now();
         let mut last_assemble = SystemTime::now();

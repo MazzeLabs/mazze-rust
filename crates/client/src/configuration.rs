@@ -6,6 +6,10 @@ use lazy_static::*;
 use parking_lot::RwLock;
 use rand::Rng;
 
+use diem_types::term_state::{
+    pos_state_config::PosStateConfig, IN_QUEUE_LOCKED_VIEWS,
+    OUT_QUEUE_LOCKED_VIEWS, ROUND_PER_TERM, TERM_ELECTED_SIZE, TERM_MAX_SIZE,
+};
 use mazze_addr::{mazze_addr_decode, Network};
 use mazze_executor::{machine::Machine, spec::CommonParams};
 use mazze_internal_common::{
@@ -38,10 +42,6 @@ use mazzecore::{
     sync_parameters::*,
     transaction_pool::TxPoolConfig,
     NodeType,
-};
-use diem_types::term_state::{
-    pos_state_config::PosStateConfig, IN_QUEUE_LOCKED_VIEWS,
-    OUT_QUEUE_LOCKED_VIEWS, ROUND_PER_TERM, TERM_ELECTED_SIZE, TERM_MAX_SIZE,
 };
 use metrics::MetricsConfiguration;
 use network::DiscoveryConfiguration;
@@ -425,6 +425,8 @@ macro_rules! set_conf {
         }
     };
 }
+
+#[derive(Debug)]
 pub struct Configuration {
     pub raw_conf: RawConfiguration,
 }
@@ -554,8 +556,9 @@ impl Configuration {
     pub fn db_config(&self) -> (PathBuf, DatabaseConfig) {
         let db_dir: PathBuf = match &self.raw_conf.block_db_dir {
             Some(dir) => dir.into(),
-            None => Path::new(&self.raw_conf.mazze_data_dir)
-                .join(BLOCK_DB_DIR_NAME),
+            None => {
+                Path::new(&self.raw_conf.mazze_data_dir).join(BLOCK_DB_DIR_NAME)
+            }
         };
         if let Err(e) = fs::create_dir_all(&db_dir) {
             panic!("Error creating database directory: {:?}", e);
@@ -680,14 +683,13 @@ impl Configuration {
                 parse_hex_string(hex_str)
                     .expect("Stratum secret should be 64-digit hex string")
             });
-
-            let mining_type = self.raw_conf.mining_type.as_ref().map_or_else(
-                || {
-                    // Start stratum if stratum_secret is present
-                    // Start cpu if only mining_author is set
-                    // Disable mining if neither is set
-                    if self.raw_conf.mining_author.is_some() {
-                        if stratum_secret.is_some() {
+        let mining_type = self.raw_conf.mining_type.as_ref().map_or_else(
+            || {
+                // Start stratum if stratum_secret is present
+                // Start cpu if only mining_author is set
+                // Disable mining if neither is set
+                if self.raw_conf.mining_author.is_some() {
+                    if stratum_secret.is_some() {
                         "stratum"
                     } else {
                         "cpu"
@@ -782,8 +784,7 @@ impl Configuration {
                 .join(&*storage_dir::SNAPSHOT_DIR),
             path_snapshot_info_db: mazze_data_path
                 .join(&*storage_dir::SNAPSHOT_INFO_DB_PATH),
-            path_storage_dir: mazze_data_path
-                .join(&*storage_dir::STORAGE_DIR),
+            path_storage_dir: mazze_data_path.join(&*storage_dir::STORAGE_DIR),
             provide_more_snapshot_for_sync: self
                 .raw_conf
                 .provide_more_snapshot_for_sync
@@ -901,7 +902,7 @@ impl Configuration {
             sync_expire_block_timeout: Duration::from_secs(
                 self.raw_conf.sync_expire_block_timeout_s,
             ),
-             //TODO: uncomment this after testing
+            //TODO: uncomment this after testing
             // allow_phase_change_without_peer: if self.is_dev_mode() {
             //     true
             // } else {
@@ -1326,7 +1327,8 @@ impl Configuration {
         params.transition_heights.cip40 =
             self.raw_conf.tanzanite_transition_height;
         let mut base_block_rewards = BTreeMap::new();
-        base_block_rewards.insert(0, INITIAL_BASE_MINING_REWARD_IN_UMAZZE.into());
+        base_block_rewards
+            .insert(0, INITIAL_BASE_MINING_REWARD_IN_UMAZZE.into());
         base_block_rewards.insert(
             params.transition_heights.cip40,
             MINING_REWARD_TANZANITE_IN_UMAZZE.into(),

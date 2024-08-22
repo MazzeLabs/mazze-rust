@@ -1,5 +1,4 @@
 
-
 use std::{
     collections::HashMap,
     fs::File,
@@ -11,6 +10,11 @@ use rustc_hex::FromHex;
 use serde::{Deserialize, Serialize};
 use toml::Value;
 
+use diem_crypto::{
+    bls::BLSPrivateKey, ec_vrf::EcVrfPublicKey, PrivateKey, ValidCryptoMaterial,
+};
+use diem_types::validator_config::{ConsensusPublicKey, ConsensusVRFPublicKey};
+use keylib::KeyPair;
 use mazze_executor::internal_contract::initialize_internal_contract_accounts;
 use mazze_internal_common::debug::ComputeEpochDebugRecord;
 use mazze_parameters::{
@@ -27,17 +31,13 @@ use mazze_types::{
     address_util::AddressUtil, Address, AddressSpaceUtil, AddressWithSpace,
     Space, H256, U256,
 };
-use diem_crypto::{
-    bls::BLSPrivateKey, ec_vrf::EcVrfPublicKey, PrivateKey, ValidCryptoMaterial,
-};
-use diem_types::validator_config::{ConsensusPublicKey, ConsensusVRFPublicKey};
-use keylib::KeyPair;
 use primitives::{
     Action, Block, BlockHeaderBuilder, BlockReceipts, SignedTransaction,
 };
 use secret_store::SecretStore;
 
 use crate::verification::{compute_receipts_root, compute_transaction_root};
+use diem_types::account_address::AccountAddress;
 use mazze_executor::{
     executive::{
         contract_address, ExecutionOutcome, ExecutiveContext, TransactOptions,
@@ -46,7 +46,6 @@ use mazze_executor::{
     state::{CleanupMode, State},
 };
 use mazze_vm_types::{CreateContractAddress, Env};
-use diem_types::account_address::AccountAddress;
 use primitives::transaction::native_transaction::NativeTransaction;
 
 pub fn default(dev_or_test_mode: bool) -> HashMap<AddressWithSpace, U256> {
@@ -129,8 +128,8 @@ pub fn genesis_block(
     }
     let genesis_account_address = GENESIS_ACCOUNT_ADDRESS.with_native_space();
 
-    let genesis_token_count =
-        U256::from(GENESIS_TOKEN_COUNT_IN_MAZZE) * U256::from(ONE_MAZZE_IN_MAZZY);
+    let genesis_token_count = U256::from(GENESIS_TOKEN_COUNT_IN_MAZZE)
+        * U256::from(ONE_MAZZE_IN_MAZZY);
     state.add_total_issued(genesis_token_count);
     let two_year_unlock_token_count =
         U256::from(TWO_YEAR_UNLOCK_TOKEN_COUNT_IN_MAZZE)
@@ -182,7 +181,7 @@ pub fn genesis_block(
     create_genesis_token_manager_two_year_unlock_transaction.chain_id =
         genesis_chain_id;
     create_genesis_token_manager_two_year_unlock_transaction.gas =
-    4000000.into();
+        4000000.into();
     create_genesis_token_manager_two_year_unlock_transaction.gas_price =
         1.into();
     create_genesis_token_manager_two_year_unlock_transaction.storage_limit =
@@ -202,7 +201,7 @@ pub fn genesis_block(
     create_genesis_token_manager_four_year_unlock_transaction.chain_id =
         genesis_chain_id;
     create_genesis_token_manager_four_year_unlock_transaction.gas =
-    8000000.into();
+        8000000.into();
     create_genesis_token_manager_four_year_unlock_transaction.gas_price =
         1.into();
     create_genesis_token_manager_four_year_unlock_transaction.storage_limit =

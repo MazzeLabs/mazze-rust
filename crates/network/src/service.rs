@@ -19,8 +19,6 @@ use parity_path::restrict_permissions_owner;
 use parking_lot::{Mutex, RwLock};
 use rlp::{Decodable, DecoderError, Encodable, Rlp, RlpStream};
 
-use mazze_addr::Network;
-use mazze_bytes::Bytes;
 use diem_crypto::ValidCryptoMaterialStringExt;
 use diem_types::{
     account_address::from_consensus_public_key,
@@ -31,6 +29,8 @@ use diem_types::{
 };
 use keylib::{sign, Generator, KeyPair, Random, Secret};
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
+use mazze_addr::Network;
+use mazze_bytes::Bytes;
 use priority_send_queue::SendQueuePriority;
 
 use crate::{
@@ -53,7 +53,7 @@ use super::DisconnectReason;
 
 const MAX_SESSIONS: usize = 2048;
 
-const DEFAULT_PORT: u16 = 55555;
+const DEFAULT_PORT: u16 = 32323;
 
 const FIRST_SESSION: StreamToken = 0;
 const LAST_SESSION: StreamToken = FIRST_SESSION + MAX_SESSIONS - 1;
@@ -686,10 +686,10 @@ impl NetworkServiceInner {
                     .insert(peer, Duration::from_millis(latency_ms as u64));
                 Ok(())
             }
-            None => Err(
-                "Mazze not in test mode, and does not support add_latency"
-                    .into(),
-            ),
+            None => {
+                Err("Mazze not in test mode, and does not support add_latency"
+                    .into())
+            }
         }
     }
 
