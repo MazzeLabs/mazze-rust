@@ -80,7 +80,7 @@ dev_block_interval_ms = 250
 # The value is 64-digit hex string.
 # If not set, the RPC subscription will not check the authorization.
 #
-# stratum_secret = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+stratum_secret = "9c22ff5f21f0b81b113e63f7db6da94fedef11b2119b4088b89664fb9a3cb658"
 
 # -------------- Log-related Configuration -------------
 

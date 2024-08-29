@@ -1,5 +1,5 @@
 
-mod miner;
+pub mod miner;
 
 use crate::miner::{
     stratum::{Options as StratumOption, Stratum},

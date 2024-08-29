@@ -53,7 +53,7 @@ members = [
     "crates/util/treap-map",
     "crates/util/version",
     "crates/serde_utils",
-    "crates/mazzecore/geth-tracer",
+    "crates/mazzecore/geth-tracer", "bins/mazze-miner",
 ]
 
 resolver = "2"

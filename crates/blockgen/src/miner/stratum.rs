@@ -57,14 +57,15 @@ fn clean_0x(s: &str) -> &str {
     }
 }
 
-struct SubmitPayload {
-    worker_id: String,
-    nonce: U256,
-    pow_hash: H256,
+pub struct SubmitPayload {
+    pub worker_id: String,
+    pub nonce: U256,
+    pub pow_hash: H256,
 }
 
+
 impl SubmitPayload {
-    fn from_args(payload: Vec<String>) -> Result<Self, PayloadError> {
+    pub fn from_args(payload: Vec<String>) -> Result<Self, PayloadError> {
         if payload.len() != 4 {
             return Err(PayloadError::ArgumentsAmountUnexpected(payload.len()));
         }
